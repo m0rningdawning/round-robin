@@ -15,13 +15,13 @@ void init_rr_manual(s_process **processes, int *num_processes) {
 
   for (int i = 0; i < *num_processes; ++i) {
     printf("Proecss %d: \n", i);
-    printf("Process %d PID: \n", i + 1);
+    printf("Process %d PID: \n", i);
     scanf("%u", &((*processes)[i].pid));
-    printf("Process %d Quantum: \n", i + 1);
+    printf("Process %d Quantum: \n", i);
     scanf("%u", &((*processes)[i].quantum));
-    printf("Process %d Arrival Time: \n", i + 1);
+    printf("Process %d Arrival Time: \n", i);
     scanf("%u", &((*processes)[i].t_arrival));
-    printf("Process %d Burst Time: \n", i + 1);
+    printf("Process %d Burst Time: \n", i);
     scanf("%u", &((*processes)[i].t_burst));
     (*processes)[i].t_completion = 0;
     (*processes)[i].t_turnaround = 0;

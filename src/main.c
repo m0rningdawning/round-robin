@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "rr/rr.h"
 // #include "utils/file.h"
