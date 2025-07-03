@@ -20,10 +20,14 @@ int main(void) {
       puts("Input error!");
       return 1;
     }
-  } while (r[0] != 'm');
+  } while (r[0] != 'm' && r[0] != 'a');
 
-  free(r);
+  if (r[0] == 'a') {
+    init_rr_automatic(&processes, &num_processes);
+  } else {
+    init_rr_manual(&processes, &num_processes);
+  }
 
-  init_rr_manual(&processes, &num_processes);
   print_process(processes, num_processes);
+  free(r);
 }

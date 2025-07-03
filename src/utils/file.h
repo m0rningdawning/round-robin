@@ -8,8 +8,9 @@
 #include <stdio.h>
 #include "../rr/proc.h"
 
-s_process* read_proc_file(FILE* file);
-void write_proc_file(s_process* process);
+s_process* read_proc_file(const char* path, const uint32_t size);
+void write_proc_file(const char* path, s_process* process, const uint32_t size);
+// finish this
 void write_log_file();
 
 #endif /* FILE_H  */

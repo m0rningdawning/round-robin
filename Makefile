@@ -7,4 +7,4 @@ rr:
 	gcc $(RR_I_UTILS) -Wall $(RR_SRC) -o ./bin/rr
 
 clean:
-	rm -rf bin/main
+	rm -rf bin/rr

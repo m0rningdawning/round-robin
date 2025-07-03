@@ -1,8 +1,10 @@
 #include "rr.h"
 
+#include "../utils/file.h"
 #include "../utils/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void init_rr_manual(s_process **processes, uint32_t *num_processes) {
   printf("Enter number of processes: ");
@@ -29,4 +31,26 @@ void init_rr_manual(s_process **processes, uint32_t *num_processes) {
     (*processes)[i].t_waiting = 0;
     (*processes)[i].e_status = READY;
   }
+}
+
+// Finish this properly
+void init_rr_automatic(s_process **processes, uint32_t *num_processes) {
+  FILE *f = fopen("./proc.txt", "r");
+  if (!f) {
+    puts("Can't open proc.txt!");
+    *num_processes = 0;
+    *processes = NULL;
+    return;
+  }
+
+  uint32_t count = 0;
+  char buf[256];
+  while (fgets(buf, sizeof(buf), f)) {
+    if (strspn(buf, " \t\r\n") != strlen(buf))
+      count++;
+  }
+  fclose(f);
+
+  *num_processes = count;
+  *processes = read_proc_file("./proc.txt", count * sizeof(s_process));
 }
