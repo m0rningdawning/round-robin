@@ -8,6 +8,8 @@ void init_queue(ready_queue *r_queue, s_process *processes,
   r_queue->processes = malloc(sizeof(s_process) * num_processes);
   r_queue->capacity = num_processes;
   r_queue->size = num_processes;
+  r_queue->head = 0;
+  r_queue->tail = num_processes % num_processes;
   memcpy(r_queue->processes, processes, sizeof(s_process) * num_processes);
   qsort(r_queue->processes, num_processes, sizeof(s_process), comp_proc_arrv);
 }
@@ -33,9 +35,11 @@ void print_queue(ready_queue *r_queue) {
   }
 }
 
-void push(ready_queue *r_queue, s_process proc) {
+void push_back(ready_queue *r_queue, s_process proc) {
   if (r_queue->size < r_queue->capacity) {
-    r_queue->processes[r_queue->size++] = proc;
+    r_queue->processes[r_queue->tail] = proc;
+    r_queue->tail = (r_queue->tail + 1) % r_queue->capacity;
+    r_queue->size++;
   } else {
     perror("queue is full!");
   }
@@ -46,9 +50,8 @@ s_process pop(ready_queue *r_queue) {
     perror("queue is empty!");
     exit(EXIT_FAILURE);
   }
-  s_process proc = r_queue->processes[0];
-  memmove(&r_queue->processes[0], &r_queue->processes[1],
-          (r_queue->size - 1) * sizeof(s_process));
+  s_process proc = r_queue->processes[r_queue->head];
+  r_queue->head = (r_queue->head + 1) % r_queue->capacity;
   r_queue->size--;
   return proc;
 }
@@ -57,5 +60,5 @@ s_process *peek(ready_queue *r_queue) {
   if (r_queue->size == 0) {
     return NULL;
   }
-  return &r_queue->processes[0];
+  return &r_queue->processes[r_queue->head];
 }

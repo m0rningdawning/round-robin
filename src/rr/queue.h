@@ -8,6 +8,8 @@
 
 typedef struct {
   s_process *processes;
+  uint32_t head;
+  uint32_t tail;
   uint32_t size;
   uint32_t capacity;
 } ready_queue;
@@ -17,8 +19,7 @@ void init_queue(ready_queue *r_queue, s_process *processes,
 void free_queue(ready_queue *r_queue);
 void print_queue(ready_queue *r_queue);
 
-void push(ready_queue *r_queue, s_process proc);
-
+void push_back(ready_queue *r_queue, s_process proc);
 s_process pop(ready_queue *r_queue);
 s_process *peek(ready_queue *r_queue);
 
