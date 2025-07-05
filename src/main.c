@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "rr/rr.h"
 #include "utils/utils.h"
@@ -7,6 +8,9 @@
 // #include "utils/file.h"
 
 int main(void) {
+  // Rand seed
+  srand(time(NULL));
+
   s_process *processes;
   uint32_t num_processes;
   char *r;

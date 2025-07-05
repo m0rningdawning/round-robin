@@ -10,6 +10,6 @@ void init_rr_manual(s_process **processes,
 void init_rr_automatic(
     s_process **processes,
     uint32_t *num_processes); // Fully random, fully random w/write to the file,
-                           // read from the file
+                              // read from the file
 
 #endif /* RR_H */
