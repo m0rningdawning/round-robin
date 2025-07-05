@@ -27,7 +27,8 @@ s_process *generate_proc(const uint32_t amount, const uint8_t is_quant_static,
   for (int i = 0; i < amount; ++i) {
     processes[i].pid = i;
     processes[i].e_status = READY;
-    processes[i].quantum = is_quant_static == 1 ? quantum : (rand() % quantum) + 1;
+    processes[i].quantum =
+        is_quant_static == 1 ? quantum : (rand() % quantum) + 1;
     processes[i].t_arrival = (rand() % t_arrival_r) + 1;
     processes[i].t_burst = (rand() % t_burst_r) + 1;
     processes[i].t_completion = 0;
@@ -36,4 +37,12 @@ s_process *generate_proc(const uint32_t amount, const uint8_t is_quant_static,
   }
 
   return processes;
+}
+
+int comp_proc_arrv(const void *a, const void *b) {
+  const s_process *p1 = (const s_process *)a;
+  const s_process *p2 = (const s_process *)b;
+  if (p1->t_arrival < p2->t_arrival) return -1;
+  if (p1->t_arrival > p2->t_arrival) return 1;
+  return 0;
 }

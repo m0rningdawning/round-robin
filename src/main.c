@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "rr/queue.h"
 #include "rr/rr.h"
 #include "utils/utils.h"
 
@@ -13,6 +14,7 @@ int main(void) {
 
   s_process *processes;
   uint32_t num_processes;
+  ready_queue *r_queue;
   char *r;
 
   puts("Morningdawning's scheduler simulator (RR only for now)");
@@ -27,11 +29,14 @@ int main(void) {
   } while (r[0] != 'm' && r[0] != 'a');
 
   if (r[0] == 'a') {
-    init_rr_automatic(&processes, &num_processes);
+    init_rr_automatic(&processes, &num_processes, &r_queue);
   } else {
-    init_rr_manual(&processes, &num_processes);
+    init_rr_manual(&processes, &num_processes, &r_queue);
   }
 
-  print_process(processes, num_processes);
+  // print_process(processes, num_processes);
+  print_queue(r_queue);
+  free(processes);
+  free_queue(r_queue);
   free(r);
 }

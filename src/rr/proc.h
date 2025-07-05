@@ -19,9 +19,9 @@ typedef struct {
 } s_process;
 
 void print_process(s_process *processes, int num_processes);
-// write this
 s_process *generate_proc(const uint32_t amount, const uint8_t is_quant_static,
                          const uint32_t quantum, const uint32_t t_arrival_r,
                          const uint32_t t_burst_r);
+int comp_proc_arrv(const void *a, const void *b);
 
 #endif /* ifndef PROC_H */

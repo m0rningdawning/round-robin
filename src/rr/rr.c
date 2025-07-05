@@ -3,6 +3,7 @@
 #include "../utils/file.h"
 #include "../utils/utils.h"
 #include "proc.h"
+#include "queue.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +11,8 @@
 // After the RR is implemented, add the possibility to optionally save logs to
 // the file
 
-void init_rr_manual(s_process **processes, uint32_t *num_processes) {
+void init_rr_manual(s_process **processes, uint32_t *num_processes,
+                    ready_queue **r_queue) {
   printf("Enter number of processes: ");
   *num_processes = get_int(0);
 
@@ -50,10 +52,14 @@ void init_rr_manual(s_process **processes, uint32_t *num_processes) {
   // Ask if the user wants logs to be stored in a file
 
   // Proceed with the rr algo here
+  // Queue init
+  *r_queue = malloc(sizeof(ready_queue));
+  init_queue(*r_queue, *processes, *num_processes);
 }
 
 // Finish this properly
-void init_rr_automatic(s_process **processes, uint32_t *num_processes) {
+void init_rr_automatic(s_process **processes, uint32_t *num_processes,
+                       ready_queue **r_queue) {
   puts("Do you want to load the processes from the file? [y/n]");
   char ans;
 
@@ -130,4 +136,7 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes) {
   // Ask if the user wants logs to be stored in a file
 
   // Proceed with the rr algo here
+  // Queue init
+  *r_queue = malloc(sizeof(ready_queue));
+  init_queue(*r_queue, *processes, *num_processes);
 }
