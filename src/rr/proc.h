@@ -1,11 +1,12 @@
 #ifndef PROC_H
 #define PROC_H
 
+#include <pthread.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <uchar.h>
 
-enum PROC_STATUS { READY, RUNNING, WAITING, BLOCKED, FINISHED };
+enum PROC_STATUS { OTW, WAITING, READY, RUNNING, BLOCKED, FINISHED };
 
 typedef struct {
   uint32_t pid;
@@ -16,6 +17,7 @@ typedef struct {
   uint32_t t_turnaround;
   uint32_t t_waiting;
   enum PROC_STATUS e_status;
+  pthread_mutex_t m_lock;
 } s_process;
 
 void print_process(s_process *processes, int num_processes);

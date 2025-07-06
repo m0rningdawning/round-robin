@@ -7,9 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-// After the RR is implemented, add the possibility to optionally save logs to
+// - After the RR is implemented, add the possibility to optionally save logs to
 // the file
+// - Remake the sleep on every thread -> sleep on the main + threads on aux
 
 void init_rr_manual(s_process **processes, uint32_t *num_processes,
                     ready_queue **r_queue) {
@@ -51,13 +53,20 @@ void init_rr_manual(s_process **processes, uint32_t *num_processes,
 
   // Ask if the user wants logs to be stored in a file
 
-  // Proceed with the rr algo here
-  // Queue init
+  // Sorting the proc after saving to the file to avoid the sorting worst case
+  // scenario on the file load
+  qsort(*processes, *num_processes, sizeof(s_process), comp_proc_arrv);
+
+  // Init the locks (Destroy afterwards!!)
+  for (int i = 0; i < *num_processes; ++i) {
+    pthread_mutex_init(&(*processes)[i].m_lock, NULL);
+  }
+
+  // Init the ready queue
   *r_queue = malloc(sizeof(ready_queue));
   init_queue(*r_queue, *processes, *num_processes);
 }
 
-// Finish this properly
 void init_rr_automatic(s_process **processes, uint32_t *num_processes,
                        ready_queue **r_queue) {
   puts("Do you want to load the processes from the file? [y/n]");
@@ -86,6 +95,11 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
 
     *num_processes = count;
     *processes = read_proc_file("./proc.txt", count * sizeof(s_process));
+
+    if (*processes == NULL) {
+      fprintf(stderr, "Failed to read processes from file\n");
+      exit(EXIT_FAILURE);
+    }
   } else {
     uint8_t is_quant_static;
     uint32_t quantum, t_arrival_r, t_burst_r;
@@ -135,8 +149,96 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
 
   // Ask if the user wants logs to be stored in a file
 
-  // Proceed with the rr algo here
-  // Queue init
+  // Sorting the proc after saving to the file to avoid the sorting worst case
+  // scenario on the file load
+  qsort(*processes, *num_processes, sizeof(s_process), comp_proc_arrv);
+
+  // Init the locks (Destroy afterwards!!)
+  for (int i = 0; i < *num_processes; ++i) {
+    pthread_mutex_init(&(*processes)[i].m_lock, NULL);
+  }
+
+  // Init the ready queue
   *r_queue = malloc(sizeof(ready_queue));
   init_queue(*r_queue, *processes, *num_processes);
+}
+
+// A per-process "wait for arrival" task
+void *process_task(s_process *process) {
+  while (1) {
+    sleep(1);
+
+    pthread_mutex_lock(&process->m_lock);
+    if (process->t_arrival > 0) {
+      process->t_arrival--;
+    }
+
+    if (process->t_arrival == 0) {
+      process->e_status = READY;
+      pthread_mutex_unlock(&process->m_lock);
+      break;
+    }
+
+    pthread_mutex_unlock(&process->m_lock);
+  }
+
+  return NULL;
+}
+
+// A task for initial queue population on arrival
+void *populate_arrival(void *arg) {
+  rr_thread_args *args = (rr_thread_args *)arg;
+
+  uint32_t proc_left = *args->num_processes;
+  pthread_t *threads = malloc((*args->num_processes) * sizeof(pthread_t));
+
+  for (int i = 0; i < *args->num_processes; ++i) {
+    pthread_create(&threads[i], NULL, (void *(*)(void *))process_task,
+                   &args->processes[i]);
+  }
+
+  while (proc_left > 0) {
+    sleep(1);
+
+    for (int i = 0; i < *args->num_processes; ++i) {
+      pthread_mutex_lock(&args->processes[i].m_lock);
+
+      if (args->processes[i].e_status == READY) {
+        push_back(args->r_queue, args->processes[i]);
+        args->processes[i].e_status = WAITING;
+        proc_left--;
+      }
+
+      pthread_mutex_unlock(&args->processes[i].m_lock);
+    }
+  }
+
+  for (int i = 0; i < *args->num_processes; ++i) {
+    pthread_join(threads[i], NULL);
+  }
+  free(threads);
+
+  return NULL;
+}
+
+// Main schedule/reschedule task
+void *schedule_reschedule(void *arg) { return NULL; }
+
+// Round robin algo with constant quantum (for now), variable arrival time and
+// multithreading for tasks
+void round_robin(s_process *processes, uint32_t *num_processes,
+                 ready_queue *r_queue) {
+  pthread_t arr_thread, sched_thread;
+
+  rr_thread_args *args = malloc(sizeof(rr_thread_args));
+  args->processes = processes;
+  args->num_processes = num_processes;
+  args->r_queue = r_queue;
+
+  pthread_create(&arr_thread, NULL, (void *(*)(void *))populate_arrival, args);
+  // pthread_create(&scheed_thread, NULL, (void *(*)(void
+  // *))schedule_reschedule,...);
+
+  pthread_join(arr_thread, NULL);
+  // pthread_join(sched_thread, NULL);
 }

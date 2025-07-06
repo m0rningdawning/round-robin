@@ -34,6 +34,9 @@ int main(void) {
     init_rr_manual(&processes, &num_processes, &r_queue);
   }
 
+  // The algo here
+  round_robin(processes, &num_processes, r_queue);
+
   // print_process(processes, num_processes);
   print_queue(r_queue);
   free(processes);

@@ -3,15 +3,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Slap mutexes on everything in sight
+
 void init_queue(ready_queue *r_queue, s_process *processes,
                 uint32_t num_processes) {
   r_queue->processes = malloc(sizeof(s_process) * num_processes);
   r_queue->capacity = num_processes;
-  r_queue->size = num_processes;
+  r_queue->size = 0;
   r_queue->head = 0;
-  r_queue->tail = num_processes % num_processes;
-  memcpy(r_queue->processes, processes, sizeof(s_process) * num_processes);
-  qsort(r_queue->processes, num_processes, sizeof(s_process), comp_proc_arrv);
+  r_queue->tail = 0;
+  // memcpy(r_queue->processes, processes, sizeof(s_process) * num_processes);
+  // qsort(r_queue->processes, num_processes, sizeof(s_process), comp_proc_arrv);
 }
 
 void free_queue(ready_queue *r_queue) {
