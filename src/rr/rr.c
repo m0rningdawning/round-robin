@@ -42,14 +42,15 @@ void init_rr_manual(s_process **processes, uint32_t *num_processes,
 
   puts("Do you want to save the processes into the \"proc.txt\" file for "
        "future use? [y/n]");
-  char ans;
+  char *ans;
   do {
-    ans = get_string()[0];
-  } while (ans != 'y' && ans != 'n');
+    ans = get_string();
+  } while (ans[0] != 'y' && ans[0] != 'n');
 
-  if (ans == 'y') {
+  if (ans[0] == 'y') {
     write_proc_file("./proc.txt", *processes, *num_processes);
   }
+  free(ans);
 
   // Ask if the user wants logs to be stored in a file
 
@@ -70,13 +71,13 @@ void init_rr_manual(s_process **processes, uint32_t *num_processes,
 void init_rr_automatic(s_process **processes, uint32_t *num_processes,
                        ready_queue **r_queue) {
   puts("Do you want to load the processes from the file? [y/n]");
-  char ans;
+  char *ans;
 
   do {
-    ans = get_string()[0];
-  } while (ans != 'y' && ans != 'n');
+    ans = get_string();
+  } while (ans[0] != 'y' && ans[0] != 'n');
 
-  if (ans == 'y') {
+  if (ans[0] == 'y') {
     FILE *f = fopen("./proc.txt", "r");
     if (!f) {
       puts("Can't open proc.txt!");
@@ -103,7 +104,6 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
   } else {
     uint8_t is_quant_static;
     uint32_t quantum, t_arrival_r, t_burst_r;
-    ans = '\0';
 
     // Ask for the amount of processes
     puts("Enter the amount of processes to generate (1 - 50):");
@@ -115,10 +115,10 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
     puts("Do you want the quantum type be constant or randomly generated in a "
          "certain range? [y/n]");
     do {
-      ans = get_string()[0];
-    } while (ans != 'y' && ans != 'n');
+      ans = get_string();
+    } while (ans[0] != 'y' && ans[0] != 'n');
 
-    if (ans == 'y') {
+    if (ans[0] == 'y') {
       is_quant_static = 1;
       puts("Enter the quantum time (1 - 20): ");
     } else {
@@ -146,6 +146,7 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
     *processes = generate_proc(*num_processes, is_quant_static, quantum,
                                t_arrival_r, t_burst_r);
   }
+  free(ans);
 
   // Ask if the user wants logs to be stored in a file
 
@@ -228,7 +229,8 @@ void *schedule_reschedule(void *arg) { return NULL; }
 // multithreading for tasks
 void round_robin(s_process *processes, uint32_t *num_processes,
                  ready_queue *r_queue) {
-  pthread_t arr_thread, sched_thread;
+  pthread_t arr_thread;
+  // pthread_t sched_thread;
 
   rr_thread_args *args = malloc(sizeof(rr_thread_args));
   args->processes = processes;
@@ -240,5 +242,6 @@ void round_robin(s_process *processes, uint32_t *num_processes,
   // *))schedule_reschedule,...);
 
   pthread_join(arr_thread, NULL);
+  free(args);
   // pthread_join(sched_thread, NULL);
 }

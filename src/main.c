@@ -7,6 +7,7 @@
 #include "utils/utils.h"
 
 // #include "utils/file.h"
+// Fix leaks on wrong Input!
 
 int main(void) {
   // Rand seed
@@ -39,6 +40,7 @@ int main(void) {
 
   // print_process(processes, num_processes);
   print_queue(r_queue);
+
   free(processes);
   free_queue(r_queue);
   free(r);
