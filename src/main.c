@@ -38,8 +38,8 @@ int main(void) {
   // The algo here
   round_robin(processes, &num_processes, r_queue);
 
-  // print_process(processes, num_processes);
-  print_queue(r_queue);
+  print_process(processes, num_processes);
+  // print_queue(r_queue);
 
   free(processes);
   free_queue(r_queue);

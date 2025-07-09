@@ -10,6 +10,9 @@ typedef struct {
   s_process *processes;
   uint32_t *num_processes;
   ready_queue *r_queue;
+  pthread_mutex_t *m_inc_ct;
+  pthread_cond_t *con_inc_ct;
+  volatile char inc_thread_done;
 } rr_thread_args;
 
 void init_rr_manual(s_process **processes, uint32_t *num_processes,
@@ -21,7 +24,9 @@ void init_rr_automatic(
                             // file, read from the file
 
 void *process_task(s_process *process);
-void *populate_arrival(void *arg);
+void *populate_arrival_task(void *arg);
+void *inc_tcompl_task(void *arg);
+void *schedule_reschedule(void *arg);
 void round_robin(s_process *processes, uint32_t *num_processes,
                  ready_queue *r_queue);
 

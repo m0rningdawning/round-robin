@@ -25,7 +25,7 @@ s_process *generate_proc(const uint32_t amount, const uint8_t is_quant_static,
 
   for (int i = 0; i < amount; ++i) {
     processes[i].pid = i;
-    processes[i].e_status = READY;
+    processes[i].e_status = OTW;
     processes[i].quantum =
         is_quant_static == 1 ? quantum : (rand() % quantum) + 1;
     processes[i].t_arrival = (rand() % t_arrival_r) + 1;

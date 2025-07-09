@@ -13,7 +13,8 @@ void init_queue(ready_queue *r_queue, s_process *processes,
   r_queue->head = 0;
   r_queue->tail = 0;
   // memcpy(r_queue->processes, processes, sizeof(s_process) * num_processes);
-  // qsort(r_queue->processes, num_processes, sizeof(s_process), comp_proc_arrv);
+  // qsort(r_queue->processes, num_processes, sizeof(s_process),
+  // comp_proc_arrv);
 }
 
 void free_queue(ready_queue *r_queue) {
@@ -23,7 +24,7 @@ void free_queue(ready_queue *r_queue) {
 
 void print_queue(ready_queue *r_queue) {
   for (uint32_t i = 0; i < r_queue->size; ++i) {
-    s_process *proc = &r_queue->processes[i];
+    s_process *proc = r_queue->processes[i];
     printf("Process %u\n", i + 1);
     printf("PID: %u\n", proc->pid);
     printf("Status: %d\n", proc->e_status);
@@ -37,7 +38,7 @@ void print_queue(ready_queue *r_queue) {
   }
 }
 
-void push_back(ready_queue *r_queue, s_process proc) {
+void push_back(ready_queue *r_queue, s_process *proc) {
   if (r_queue->size < r_queue->capacity) {
     r_queue->processes[r_queue->tail] = proc;
     r_queue->tail = (r_queue->tail + 1) % r_queue->capacity;
@@ -47,12 +48,12 @@ void push_back(ready_queue *r_queue, s_process proc) {
   }
 }
 
-s_process pop(ready_queue *r_queue) {
+s_process *pop(ready_queue *r_queue) {
   if (r_queue->size == 0) {
     perror("queue is empty!");
     exit(EXIT_FAILURE);
   }
-  s_process proc = r_queue->processes[r_queue->head];
+  s_process *proc = r_queue->processes[r_queue->head];
   r_queue->head = (r_queue->head + 1) % r_queue->capacity;
   r_queue->size--;
   return proc;
@@ -62,5 +63,5 @@ s_process *peek(ready_queue *r_queue) {
   if (r_queue->size == 0) {
     return NULL;
   }
-  return &r_queue->processes[r_queue->head];
+  return r_queue->processes[r_queue->head];
 }
