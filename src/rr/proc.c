@@ -6,10 +6,14 @@
 void print_process(s_process *processes, int num_processess) {
   for (int i = 0; i < num_processess; ++i) {
     printf("Process %d\n", i + 1);
-    printf("%u\n%d\n%u\n%u\n%u\n%u\n%u\n%u\n", processes[i].pid,
-           processes[i].e_status, processes[i].quantum, processes[i].t_arrival,
-           processes[i].t_burst, processes[i].t_completion,
-           processes[i].t_turnaround, processes[i].t_waiting);
+    printf("  pid: %u\n", processes[i].pid);
+    printf("  e_status: %d\n", processes[i].e_status);
+    printf("  quantum: %u\n", processes[i].quantum);
+    printf("  t_arrival: %u\n", processes[i].t_arrival);
+    printf("  t_burst: %u\n", processes[i].t_burst);
+    printf("  t_completion: %u\n", processes[i].t_completion);
+    printf("  t_turnaround: %u\n", processes[i].t_turnaround);
+    printf("  t_waiting: %u\n", processes[i].t_waiting);
   }
 }
 
@@ -44,4 +48,15 @@ int comp_proc_arrv(const void *a, const void *b) {
   if (p1->t_arrival < p2->t_arrival) return -1;
   if (p1->t_arrival > p2->t_arrival) return 1;
   return 0;
+}
+
+void calculate_stats(s_process *processes, s_process *processes_init, int num_processes) {
+  for (int i = 0; i < num_processes; ++i) {
+    processes[i].t_arrival = processes_init[i].t_arrival;
+    processes[i].t_burst = processes_init[i].t_burst;
+    int32_t turnaround = (int32_t)processes[i].t_completion - (int32_t)processes_init[i].t_arrival;
+    int32_t waiting = turnaround - (int32_t)processes_init[i].t_burst;
+    processes[i].t_turnaround = turnaround;
+    processes[i].t_waiting = waiting > 0 ? waiting : 0;
+  }
 }

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "rr/queue.h"
@@ -35,13 +36,23 @@ int main(void) {
     init_rr_manual(&processes, &num_processes, &r_queue);
   }
 
-  // The algo here
+  // had to save the initial state for statistical purposes
+  s_process *processes_init;
+  processes_init = malloc(num_processes * sizeof(s_process));
+  memcpy(processes_init, processes, num_processes * sizeof(s_process));
+
+  puts("Initial processes statistics: ");
+  print_process(processes, num_processes);
+
   round_robin(processes, &num_processes, r_queue);
 
+  puts("Scheduled processes statistics: ");
+  calculate_stats(processes, processes_init, num_processes);
   print_process(processes, num_processes);
   // print_queue(r_queue);
 
   free(processes);
+  free(processes_init);
   free_queue(r_queue);
   free(r);
 }

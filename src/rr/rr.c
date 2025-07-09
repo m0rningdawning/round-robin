@@ -1,13 +1,14 @@
 #include "rr.h"
 
-#include "../utils/file.h"
-#include "../utils/utils.h"
-#include "proc.h"
-#include "queue.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "../utils/file.h"
+#include "../utils/utils.h"
+#include "proc.h"
+#include "queue.h"
 
 // - After the RR is implemented, add the possibility to optionally save logs to
 // the file
@@ -40,8 +41,9 @@ void init_rr_manual(s_process **processes, uint32_t *num_processes,
     (*processes)[i].e_status = READY;
   }
 
-  puts("Do you want to save the processes into the \"proc.txt\" file for "
-       "future use? [y/n]");
+  puts(
+      "Do you want to save the processes into the \"proc.txt\" file for "
+      "future use? [y/n]");
   char *ans;
   do {
     ans = get_string();
@@ -90,8 +92,7 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
     uint32_t count = 0;
     char buf[256];
     while (fgets(buf, sizeof(buf), f)) {
-      if (strspn(buf, " \t\r\n") != strlen(buf))
-        count++;
+      if (strspn(buf, " \t\r\n") != strlen(buf)) count++;
     }
     fclose(f);
 
@@ -113,8 +114,9 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
     } while (*num_processes <= 0 || *num_processes >= 51);
 
     // Ask for quantum type
-    puts("Do you want the quantum type be constant or randomly generated in a "
-         "certain range? [y/n]");
+    puts(
+        "Do you want the quantum type be constant or randomly generated in a "
+        "certain range? [y/n]");
     do {
       ans = get_string();
     } while (ans[0] != 'y' && ans[0] != 'n');
@@ -295,7 +297,7 @@ void *schedule_reschedule(void *arg) {
   return NULL;
 }
 
-// Round robin algo with constant quantum (for now), variable arrival time and
+// Round robin algo with constant or variable quantum, variable arrival time and
 // multithreading (ready queue population and scheduling)
 void round_robin(s_process *processes, uint32_t *num_processes,
                  ready_queue *r_queue) {
@@ -315,13 +317,9 @@ void round_robin(s_process *processes, uint32_t *num_processes,
   args->con_inc_ct = con_inc_ct;
   args->inc_thread_done = 0;
 
-  pthread_create(&arr_thread, NULL, (void *(*)(void *))populate_arrival_task,
-                 args);
-  pthread_create(&sched_thread, NULL, (void *(*)(void *))schedule_reschedule,
-                 args);
+  pthread_create(&arr_thread, NULL, (void *(*)(void *))populate_arrival_task, args);
+  pthread_create(&sched_thread, NULL, (void *(*)(void *))schedule_reschedule, args);
   pthread_create(&inc_thread, NULL, inc_tcompl_task, args);
-
-  // call the "calculate stats"
 
   // total cleanup
   pthread_join(arr_thread, NULL);
