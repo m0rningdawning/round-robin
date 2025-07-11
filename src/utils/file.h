@@ -6,6 +6,7 @@
 #define FILE_H
 
 #include <stdio.h>
+
 #include "../rr/proc.h"
 
 s_process* read_proc_file(const char* path, const uint32_t size);

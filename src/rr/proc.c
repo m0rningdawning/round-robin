@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../utils/randomize.h"
+
 void print_process(s_process *processes, int num_processess) {
   for (int i = 0; i < num_processess; ++i) {
     printf("Process %d\n", i + 1);
@@ -51,11 +53,13 @@ int comp_proc_arrv(const void *a, const void *b) {
   return 0;
 }
 
-void calculate_stats(s_process *processes, s_process *processes_init, int num_processes) {
+void calculate_stats(s_process *processes, s_process *processes_init,
+                     int num_processes) {
   for (int i = 0; i < num_processes; ++i) {
     processes[i].t_arrival = processes_init[i].t_arrival;
     processes[i].t_burst = processes_init[i].t_burst;
-    int32_t turnaround = (int32_t)processes[i].t_completion - (int32_t)processes_init[i].t_arrival;
+    int32_t turnaround = (int32_t)processes[i].t_completion -
+                         (int32_t)processes_init[i].t_arrival;
     int32_t waiting = turnaround - (int32_t)processes_init[i].t_burst;
     processes[i].t_turnaround = turnaround;
     processes[i].t_waiting = waiting > 0 ? waiting : 0;

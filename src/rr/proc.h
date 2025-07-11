@@ -25,6 +25,7 @@ s_process *generate_proc(const uint32_t amount, const uint8_t is_quant_static,
                          const uint32_t quantum, const uint32_t t_arrival_r,
                          const uint32_t t_burst_r);
 int comp_proc_arrv(const void *a, const void *b);
-void calculate_stats(s_process *processes, s_process *processes_init, int num_processes);
+void calculate_stats(s_process *processes, s_process *processes_init,
+                     int num_processes);
 
 #endif /* ifndef PROC_H */

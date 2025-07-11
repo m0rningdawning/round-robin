@@ -1,9 +1,9 @@
 #include "queue.h"
-#include "proc.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-// Slap mutexes on everything in sight
+#include "proc.h"
 
 void init_queue(ready_queue *r_queue, s_process *processes,
                 uint32_t num_processes) {
@@ -39,6 +39,7 @@ void print_queue(ready_queue *r_queue) {
 }
 
 void push_back(ready_queue *r_queue, s_process *proc) {
+  pthread_mutex_lock(&r_queue->m_lock);
   if (r_queue->size < r_queue->capacity) {
     r_queue->processes[r_queue->tail] = proc;
     r_queue->tail = (r_queue->tail + 1) % r_queue->capacity;
@@ -46,22 +47,29 @@ void push_back(ready_queue *r_queue, s_process *proc) {
   } else {
     perror("queue is full!");
   }
+  pthread_mutex_unlock(&r_queue->m_lock);
 }
 
 s_process *pop(ready_queue *r_queue) {
+  pthread_mutex_lock(&r_queue->m_lock);
   if (r_queue->size == 0) {
-    perror("queue is empty!");
-    exit(EXIT_FAILURE);
+    pthread_mutex_unlock(&r_queue->m_lock);
+    return NULL;
   }
   s_process *proc = r_queue->processes[r_queue->head];
   r_queue->head = (r_queue->head + 1) % r_queue->capacity;
   r_queue->size--;
+  pthread_mutex_unlock(&r_queue->m_lock);
   return proc;
 }
 
 s_process *peek(ready_queue *r_queue) {
+  pthread_mutex_lock(&r_queue->m_lock);
   if (r_queue->size == 0) {
+    pthread_mutex_unlock(&r_queue->m_lock);
     return NULL;
   }
-  return r_queue->processes[r_queue->head];
+  s_process *proc = r_queue->processes[r_queue->head];
+  pthread_mutex_unlock(&r_queue->m_lock);
+  return proc;
 }

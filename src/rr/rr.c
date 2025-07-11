@@ -37,7 +37,7 @@ void init_rr_manual(s_process **processes, uint32_t *num_processes,
     (*processes)[i].t_completion = 0;
     (*processes)[i].t_turnaround = 0;
     (*processes)[i].t_waiting = 0;
-    (*processes)[i].e_status = READY;
+    (*processes)[i].e_status = OTW;
   }
 
   puts(
@@ -95,7 +95,7 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
     fclose(f);
 
     *num_processes = count;
-    *processes = read_proc_file("./proc.txt", count * sizeof(s_process));
+    *processes = read_proc_file("./proc.txt", count);
 
     if (*processes == NULL) {
       fprintf(stderr, "Failed to read processes from file\n");
@@ -161,77 +161,37 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
   }
 }
 
-// Per-process "wait for arrival" task
-void *process_task(s_process *process) {
-  while (1) {
-    pthread_mutex_lock(&process->m_lock);
-    if (process->t_arrival > 0) {
-      process->t_arrival--;
-    }
-
-    if (process->t_arrival == 0) {
-      process->e_status = READY;
-      pthread_mutex_unlock(&process->m_lock);
-      break;
-    }
-
-    pthread_mutex_unlock(&process->m_lock);
-  }
-
-  return NULL;
-}
-
 // Task for initial queue population on arrival
 void *populate_arrival_task(void *arg) {
   rr_thread_args *args = (rr_thread_args *)arg;
 
-  uint32_t proc_left = *args->num_processes;
-  pthread_t *threads = malloc((*args->num_processes) * sizeof(pthread_t));
-
-  for (int i = 0; i < *args->num_processes; ++i) {
-    pthread_create(&threads[i], NULL, (void *(*)(void *))process_task,
-                   &args->processes[i]);
+  // A dumb-ass workaround - essentially, cuz the time starts
+  // to advance immediately, we need to check for the processes
+  // once before the loop starts to catch all the t_arrival: 0 proc
+  for (uint32_t i = 0; i < *args->num_processes; i++) {
+    if (args->processes[i].t_arrival == 0 &&
+        args->processes[i].e_status == OTW) {
+      push_back(args->r_queue, &args->processes[i]);
+      args->processes[i].e_status = WAITING;
+    }
   }
 
-  while (proc_left > 0) {
-    for (int i = 0; i < *args->num_processes; ++i) {
-      pthread_mutex_lock(&args->processes[i].m_lock);
+  while (!args->sim_finished) {
+    pthread_mutex_lock(args->m_tick);
+    pthread_cond_wait(args->con_tick, args->m_tick);
+    pthread_mutex_unlock(args->m_tick);
 
-      if (args->processes[i].e_status == READY) {
-        push_back(args->r_queue, &args->processes[i]);
+    if (args->sim_finished) break;
+
+    pthread_mutex_lock(args->m_master);
+    for (uint32_t i = 0; i < *args->num_processes; i++) {
+      if (args->processes[i].t_arrival == *args->time &&
+          args->processes[i].e_status == OTW) {
         args->processes[i].e_status = WAITING;
-        proc_left--;
+        push_back(args->r_queue, &args->processes[i]);
       }
-
-      pthread_mutex_unlock(&args->processes[i].m_lock);
     }
-  }
-
-  for (int i = 0; i < *args->num_processes; ++i) {
-    pthread_join(threads[i], NULL);
-  }
-  free(threads);
-
-  return NULL;
-}
-
-void *inc_tcompl_task(void *arg) {
-  rr_thread_args *args = (rr_thread_args *)arg;
-  while (!args->inc_thread_done) {
-    pthread_mutex_lock(args->m_inc_ct);
-    pthread_cond_wait(args->con_inc_ct, args->m_inc_ct);
-    if (args->inc_thread_done) {
-      pthread_mutex_unlock(args->m_inc_ct);
-      break;
-    }
-    for (int i = 0; i < *args->num_processes; ++i) {
-      pthread_mutex_lock(&args->processes[i].m_lock);
-      if (args->processes[i].e_status != FINISHED) {
-        args->processes[i].t_completion++;
-      }
-      pthread_mutex_unlock(&args->processes[i].m_lock);
-    }
-    pthread_mutex_unlock(args->m_inc_ct);
+    pthread_mutex_unlock(args->m_master);
   }
   return NULL;
 }
@@ -239,54 +199,58 @@ void *inc_tcompl_task(void *arg) {
 // Main schedule/reschedule task
 void *schedule_reschedule(void *arg) {
   rr_thread_args *args = (rr_thread_args *)arg;
+  s_process *current_proc = NULL;
+  uint32_t p_finished = 0;
+  uint32_t p_quant_passed = 0;
 
-  static int p_finished = 0;
-  static pthread_mutex_t finish_mutex = PTHREAD_MUTEX_INITIALIZER;
+  while (p_finished < *args->num_processes) {
+    pthread_mutex_lock(args->m_master);
 
-  while (1) {
-    pthread_mutex_lock(&args->r_queue->m_lock);
-    if (args->r_queue->size != 0) {
-      s_process *proc = pop(args->r_queue);
-      proc->e_status = RUNNING;
-      pthread_mutex_unlock(&args->r_queue->m_lock);
-
-      for (int i = 0; i < proc->quantum; ++i) {
-        usleep(10000);
-
-        // Completion time ++ on each tick
-        pthread_mutex_lock(args->m_inc_ct);
-        pthread_cond_signal(args->con_inc_ct);
-        pthread_mutex_unlock(args->m_inc_ct);
-
-        if (proc->t_burst > 0) {
-          proc->t_burst--;
-        } else {
-          proc->e_status = FINISHED;
-          break;
-        }
-      }
-
-      if (proc->e_status == FINISHED) {
-        pthread_mutex_lock(&finish_mutex);
+    // A process finished its quantum or finished
+    if (current_proc != NULL) {
+      if (current_proc->t_burst == 0) {
+        current_proc->e_status = FINISHED;
+        current_proc->t_completion = *args->time;
         p_finished++;
-        if (p_finished == *args->num_processes) {
-          pthread_mutex_unlock(&finish_mutex);
-          break;
-        }
-
-        pthread_mutex_unlock(&finish_mutex);
-      } else {
-        proc->e_status = WAITING;
-        push_back(args->r_queue, proc);
+        current_proc = NULL;
+      } else if (p_quant_passed >= current_proc->quantum) {
+        current_proc->e_status = WAITING;
+        push_back(args->r_queue, current_proc);
+        current_proc = NULL;
       }
-
-    } else {
-      pthread_mutex_unlock(&args->r_queue->m_lock);
-      // Sleep for a tick 'till a process arrives
-      usleep(10000);
     }
+
+    // Check for arriving threads just in case
+    pthread_mutex_lock(args->m_tick);
+    pthread_cond_signal(args->con_tick);
+    pthread_mutex_unlock(args->m_tick);
+
+    if (current_proc == NULL) {
+      current_proc = pop(args->r_queue);
+      if (current_proc != NULL) {
+        current_proc->e_status = RUNNING;
+        p_quant_passed = 0;
+      }
+    }
+
+    if (current_proc != NULL) {
+      (*args->time)++;
+      current_proc->t_burst--;
+      p_quant_passed++;
+    } else {
+      (*args->time)++;
+    }
+
+    pthread_mutex_unlock(args->m_master);
+    // To not lock up the populate arrival thread
+    usleep(10000);
   }
 
+  // Signal all threads to exit
+  args->sim_finished = true;
+  pthread_mutex_lock(args->m_tick);
+  pthread_cond_signal(args->con_tick);
+  pthread_mutex_unlock(args->m_tick);
   return NULL;
 }
 
@@ -297,42 +261,40 @@ void round_robin(s_process *processes, uint32_t *num_processes,
   // Arival and scheduling threads
   pthread_t arr_thread;
   pthread_t sched_thread;
-  // Incrementation thread + its lock and incrementation condition
-  pthread_t inc_thread;
-  pthread_mutex_t *m_inc_ct = malloc(sizeof(pthread_mutex_t));
-  pthread_cond_t *con_inc_ct = malloc(sizeof(pthread_cond_t));
-  pthread_mutex_init(m_inc_ct, NULL);
-  pthread_cond_init(con_inc_ct, NULL);
 
-  // Arguments to pass inside the thread
+  // Shared resources for threads
+  pthread_mutex_t m_tick = PTHREAD_MUTEX_INITIALIZER;
+  pthread_cond_t con_tick = PTHREAD_COND_INITIALIZER;
+  pthread_mutex_t m_master = PTHREAD_MUTEX_INITIALIZER;
+  volatile uint32_t time = 0;
+
+  // Thread argument structure init
   rr_thread_args *args = malloc(sizeof(rr_thread_args));
   args->processes = processes;
   args->num_processes = num_processes;
   args->r_queue = r_queue;
-  args->m_inc_ct = m_inc_ct;
-  args->con_inc_ct = con_inc_ct;
-  args->inc_thread_done = 0;
+  args->m_tick = &m_tick;
+  args->con_tick = &con_tick;
+  args->time = &time;
+  args->sim_finished = false;
+  args->m_master = &m_master;
 
-  // Thread init and exec
+  // Threads init and exec
   pthread_create(&arr_thread, NULL, (void *(*)(void *))populate_arrival_task, args);
   pthread_create(&sched_thread, NULL, (void *(*)(void *))schedule_reschedule, args);
-  pthread_create(&inc_thread, NULL, inc_tcompl_task, args);
 
   // Total cleanup
   pthread_join(arr_thread, NULL);
   pthread_join(sched_thread, NULL);
-  args->inc_thread_done = 1;
-  pthread_cond_signal(con_inc_ct);
-  pthread_join(inc_thread, NULL);
 
-  pthread_mutex_destroy(m_inc_ct);
-  pthread_cond_destroy(con_inc_ct);
+  pthread_mutex_destroy(&m_tick);
+  pthread_cond_destroy(&con_tick);
+  pthread_mutex_destroy(&m_master);
   free(args);
-  free(m_inc_ct);
-  free(con_inc_ct);
 
   pthread_mutex_destroy(&(*r_queue).m_lock);
-  for (int i = 0; i < *num_processes; ++i) {
+  for (uint32_t i = 0; i < *num_processes; ++i) {
     pthread_mutex_destroy(&processes[i].m_lock);
   }
 }
+
