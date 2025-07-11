@@ -42,6 +42,7 @@ s_process *generate_proc(const uint32_t amount, const uint8_t is_quant_static,
   return processes;
 }
 
+// Comparison function for quicksort
 int comp_proc_arrv(const void *a, const void *b) {
   const s_process *p1 = (const s_process *)a;
   const s_process *p2 = (const s_process *)b;

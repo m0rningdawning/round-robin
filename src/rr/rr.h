@@ -17,7 +17,6 @@ typedef struct {
 
 void init_rr_manual(s_process **processes, uint32_t *num_processes,
                     ready_queue **r_queue); // Manually init the rr
-// make proper automatic gen
 void init_rr_automatic(
     s_process **processes, uint32_t *num_processes,
     ready_queue **r_queue); // Fully random, fully random w/write to the

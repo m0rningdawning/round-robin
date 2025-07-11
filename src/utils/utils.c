@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int32_t get_int(const uint8_t is_sign) {
+int64_t get_int(const bool is_sign) {
   char buf[20];
   int32_t val;
   int count = 0;

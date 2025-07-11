@@ -2,8 +2,9 @@
 #define UTILS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
-int32_t get_int(const uint8_t is_sign);
+int64_t get_int(const bool is_sign);
 char *get_string();
 
 #endif /* UTILS_H */

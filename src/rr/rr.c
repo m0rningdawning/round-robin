@@ -12,12 +12,11 @@
 
 // - After the RR is implemented, add the possibility to optionally save logs to
 // the file
-// - Remake the sleep on every thread -> sleep on the main + threads on aux
 
 void init_rr_manual(s_process **processes, uint32_t *num_processes,
                     ready_queue **r_queue) {
   printf("Enter number of processes: ");
-  *num_processes = get_int(0);
+  *num_processes = get_int(false);
 
   *processes = malloc((*num_processes) * sizeof(s_process));
   if (*processes == NULL) {
@@ -28,13 +27,13 @@ void init_rr_manual(s_process **processes, uint32_t *num_processes,
   for (int i = 0; i < *num_processes; ++i) {
     printf("Proecss %d: \n", i);
     printf("Process %d PID: \n", i);
-    (*processes)[i].pid = get_int(0);
+    (*processes)[i].pid = get_int(false);
     printf("Process %d Quantum: \n", i);
-    (*processes)[i].quantum = get_int(0);
+    (*processes)[i].quantum = get_int(false);
     printf("Process %d Arrival Time: \n", i);
-    (*processes)[i].t_arrival = get_int(0);
+    (*processes)[i].t_arrival = get_int(false);
     printf("Process %d Burst Time: \n", i);
-    (*processes)[i].t_burst = get_int(0);
+    (*processes)[i].t_burst = get_int(false);
     (*processes)[i].t_completion = 0;
     (*processes)[i].t_turnaround = 0;
     (*processes)[i].t_waiting = 0;
@@ -56,8 +55,7 @@ void init_rr_manual(s_process **processes, uint32_t *num_processes,
 
   // Ask if the user wants logs to be stored in a file
 
-  // Sorting the proc after saving to the file to avoid the sorting worst case
-  // scenario on the file load
+  // Sort the processes (asc) by arrival time
   qsort(*processes, *num_processes, sizeof(s_process), comp_proc_arrv);
 
   // Init the ready queue
@@ -107,13 +105,11 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
     uint8_t is_quant_static;
     uint32_t quantum, t_arrival_r, t_burst_r;
 
-    // Ask for the amount of processes
     puts("Enter the amount of processes to generate (1 - 50):");
     do {
-      *num_processes = get_int(0);
+      *num_processes = get_int(false);
     } while (*num_processes <= 0 || *num_processes >= 51);
 
-    // Ask for quantum type
     puts(
         "Do you want the quantum type be constant or randomly generated in a "
         "certain range? [y/n]");
@@ -131,19 +127,17 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
 
     // Ask for the quantum itself (if static - quant, if not - range)
     do {
-      quantum = get_int(0);
+      quantum = get_int(false);
     } while (quantum <= 0 || quantum >= 21);
 
-    // Ask for arrival range
     puts("Enter the arrival time range (1 - 20): ");
     do {
-      t_arrival_r = get_int(0);
+      t_arrival_r = get_int(false);
     } while (t_arrival_r <= 0 || t_arrival_r >= 21);
 
-    // Ask for burst range
     puts("Enter the burst time range (1 - 20): ");
     do {
-      t_burst_r = get_int(0);
+      t_burst_r = get_int(false);
     } while (t_burst_r <= 0 || t_burst_r >= 21);
 
     *processes = generate_proc(*num_processes, is_quant_static, quantum,
@@ -153,8 +147,7 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
 
   // Ask if the user wants logs to be stored in a file
 
-  // Sorting the proc after saving to the file to avoid the sorting worst case
-  // scenario on the file load
+  // Sort the processes (asc) by arrival time
   qsort(*processes, *num_processes, sizeof(s_process), comp_proc_arrv);
 
   // Init the ready queue
@@ -168,7 +161,7 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
   }
 }
 
-// A per-process "wait for arrival" task
+// Per-process "wait for arrival" task
 void *process_task(s_process *process) {
   while (1) {
     pthread_mutex_lock(&process->m_lock);
@@ -188,7 +181,7 @@ void *process_task(s_process *process) {
   return NULL;
 }
 
-// A task for initial queue population on arrival
+// Task for initial queue population on arrival
 void *populate_arrival_task(void *arg) {
   rr_thread_args *args = (rr_thread_args *)arg;
 
@@ -260,7 +253,7 @@ void *schedule_reschedule(void *arg) {
       for (int i = 0; i < proc->quantum; ++i) {
         usleep(10000);
 
-        // completion time ++ on each tick
+        // Completion time ++ on each tick
         pthread_mutex_lock(args->m_inc_ct);
         pthread_cond_signal(args->con_inc_ct);
         pthread_mutex_unlock(args->m_inc_ct);
@@ -289,7 +282,7 @@ void *schedule_reschedule(void *arg) {
 
     } else {
       pthread_mutex_unlock(&args->r_queue->m_lock);
-      // sleep for a tick 'till a process arrives
+      // Sleep for a tick 'till a process arrives
       usleep(10000);
     }
   }
@@ -301,14 +294,17 @@ void *schedule_reschedule(void *arg) {
 // multithreading (ready queue population and scheduling)
 void round_robin(s_process *processes, uint32_t *num_processes,
                  ready_queue *r_queue) {
+  // Arival and scheduling threads
   pthread_t arr_thread;
   pthread_t sched_thread;
+  // Incrementation thread + its lock and incrementation condition
   pthread_t inc_thread;
   pthread_mutex_t *m_inc_ct = malloc(sizeof(pthread_mutex_t));
   pthread_cond_t *con_inc_ct = malloc(sizeof(pthread_cond_t));
   pthread_mutex_init(m_inc_ct, NULL);
   pthread_cond_init(con_inc_ct, NULL);
 
+  // Arguments to pass inside the thread
   rr_thread_args *args = malloc(sizeof(rr_thread_args));
   args->processes = processes;
   args->num_processes = num_processes;
@@ -317,11 +313,12 @@ void round_robin(s_process *processes, uint32_t *num_processes,
   args->con_inc_ct = con_inc_ct;
   args->inc_thread_done = 0;
 
+  // Thread init and exec
   pthread_create(&arr_thread, NULL, (void *(*)(void *))populate_arrival_task, args);
   pthread_create(&sched_thread, NULL, (void *(*)(void *))schedule_reschedule, args);
   pthread_create(&inc_thread, NULL, inc_tcompl_task, args);
 
-  // total cleanup
+  // Total cleanup
   pthread_join(arr_thread, NULL);
   pthread_join(sched_thread, NULL);
   args->inc_thread_done = 1;
