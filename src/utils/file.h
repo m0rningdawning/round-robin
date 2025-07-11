@@ -2,8 +2,8 @@
 // - Read the proc/queue description form the file
 // - Save the log file (pipe from log.h)
 
-#ifndef FILE_H
-#define FILE_H
+#ifndef FILE_H_
+#define FILE_H_
 
 #include <stdio.h>
 
@@ -14,4 +14,4 @@ void write_proc_file(const char* path, s_process* process, const uint32_t size);
 // finish this
 void write_log_file();
 
-#endif /* FILE_H  */
+#endif /* FILE_H_ */

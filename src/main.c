@@ -57,9 +57,6 @@ void *main_round_robin() {
 }
 
 int main(void) {
-  // Rand seed
-  srand(time(NULL));
-
   puts("Morningdawning's scheduler simulator (RR only for now)");
   puts("Choose the scheduler:");
   puts("1 - Round Robin.");

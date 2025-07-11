@@ -1,10 +1,11 @@
-#ifndef PROC_H
-#define PROC_H
+#ifndef PROC_H_
+#define PROC_H_
 
 #include <pthread.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <uchar.h>
+#include <stdbool.h>
 
 enum PROC_STATUS { OTW, WAITING, READY, RUNNING, BLOCKED, FINISHED };
 
@@ -21,11 +22,11 @@ typedef struct {
 } s_process;
 
 void print_process(s_process *processes, int num_processes);
-s_process *generate_proc(const uint32_t amount, const uint8_t is_quant_static,
+s_process *generate_proc(const uint32_t amount, const bool is_quant_static,
                          const uint32_t quantum, const uint32_t t_arrival_r,
                          const uint32_t t_burst_r);
 int comp_proc_arrv(const void *a, const void *b);
 void calculate_stats(s_process *processes, s_process *processes_init,
                      int num_processes);
 
-#endif /* ifndef PROC_H */
+#endif /* ifndef PROC_H_ */

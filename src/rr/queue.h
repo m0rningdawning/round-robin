@@ -1,5 +1,5 @@
-#ifndef QUEUE_H
-#define QUEUE_H
+#ifndef QUEUE_H_
+#define QUEUE_H_
 
 #include "proc.h"
 #include <stdbool.h>
@@ -25,4 +25,4 @@ void push_back(ready_queue *r_queue, s_process *proc);
 s_process *pop(ready_queue *r_queue);
 s_process *peek(ready_queue *r_queue);
 
-#endif /* QUEUE_H */
+#endif /* QUEUE_H_ */

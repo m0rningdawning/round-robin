@@ -19,7 +19,7 @@ void print_process(s_process *processes, int num_processess) {
   }
 }
 
-s_process *generate_proc(const uint32_t amount, const uint8_t is_quant_static,
+s_process *generate_proc(const uint32_t amount, const bool is_quant_static,
                          const uint32_t quantum, const uint32_t t_arrival_r,
                          const uint32_t t_burst_r) {
   s_process *processes = malloc(sizeof(s_process) * amount);
@@ -32,10 +32,9 @@ s_process *generate_proc(const uint32_t amount, const uint8_t is_quant_static,
   for (int i = 0; i < amount; ++i) {
     processes[i].pid = i;
     processes[i].e_status = OTW;
-    processes[i].quantum =
-        is_quant_static == 1 ? quantum : (rand() % quantum) + 1;
-    processes[i].t_arrival = (rand() % t_arrival_r) + 1;
-    processes[i].t_burst = (rand() % t_burst_r) + 1;
+    processes[i].quantum = is_quant_static ? quantum : s_random_int(1, quantum);
+    processes[i].t_arrival = s_random_int(0, t_arrival_r);
+    processes[i].t_burst = s_random_int(1, t_burst_r);
     processes[i].t_completion = 0;
     processes[i].t_turnaround = 0;
     processes[i].t_waiting = 0;

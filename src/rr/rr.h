@@ -1,5 +1,5 @@
-#ifndef RR_H
-#define RR_H
+#ifndef RR_H_
+#define RR_H_
 
 #include <pthread.h>
 #include <stdint.h>
@@ -31,4 +31,4 @@ void *schedule_reschedule(void *arg);
 void round_robin(s_process *processes, uint32_t *num_processes,
                  ready_queue *r_queue);
 
-#endif /* RR_H */
+#endif /* RR_H_ */

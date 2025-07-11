@@ -102,7 +102,7 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
       exit(EXIT_FAILURE);
     }
   } else {
-    uint8_t is_quant_static;
+    bool is_quant_static;
     uint32_t quantum, t_arrival_r, t_burst_r;
 
     puts("Enter the amount of processes to generate (1 - 50):");
@@ -118,10 +118,10 @@ void init_rr_automatic(s_process **processes, uint32_t *num_processes,
     } while (ans[0] != 'y' && ans[0] != 'n');
 
     if (ans[0] == 'y') {
-      is_quant_static = 1;
+      is_quant_static = true;
       puts("Enter the quantum time (1 - 20): ");
     } else {
-      is_quant_static = 0;
+      is_quant_static = false;
       puts("Enter the quantum time max value in range (1 - 20):");
     }
 
